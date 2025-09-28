@@ -19,7 +19,7 @@ function Dashboard() {
 
   const fetchUpcomingTests = async () => {
     try {
-      const response = await axios.get('/api/tests');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tests`);
       setUpcomingTests(response.data.data);
     } catch (error) {
       console.error('Error fetching tests:', error);
@@ -28,7 +28,7 @@ function Dashboard() {
 
   const fetchRecentPerformance = async () => {
     try {
-      const response = await axios.get('/api/users/performance');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/performance`);
       setRecentPerformance(response.data.data.slice(-5).reverse());
     } catch (error) {
       console.error('Error fetching performance:', error);

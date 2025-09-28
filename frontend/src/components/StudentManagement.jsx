@@ -315,7 +315,7 @@ function StudentManagement() {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get(`/api/tests/students`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tests/students`);
       setStudents(response.data.data);
       setFilteredStudents(response.data.data); // Initialize filtered students with all students
     } catch (error) {
@@ -327,7 +327,7 @@ function StudentManagement() {
 
   const fetchStudentDetails = async (studentId) => {
     try {
-      const response = await axios.get(`/api/tests/students/${studentId}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tests/students/${studentId}`);
       setSelectedStudent(response.data.data);
     } catch (error) {
       console.error('Error fetching student details:', error);

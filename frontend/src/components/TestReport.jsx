@@ -19,8 +19,8 @@ function TestReport() {
   const fetchReport = async () => {
     try {
       const [testResponse, performanceResponse] = await Promise.all([
-        axios.get(`/api/tests/${testId}`),
-        axios.get('/api/users/performance')
+        axios.get(`${import.meta.env.VITE_API_URL}/api/tests/${testId}`),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/users/performance`)
       ]);
 
       const testPerformance = performanceResponse.data.data.find(
@@ -38,7 +38,7 @@ function TestReport() {
 
   const fetchPerformanceHistory = async () => {
     try {
-      const response = await axios.get('/api/users/performance');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/performance`);
       setPerformance(response.data.data);
     } catch (error) {
       console.error('Error fetching performance history:', error);

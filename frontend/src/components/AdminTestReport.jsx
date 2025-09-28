@@ -605,7 +605,7 @@ function AdminTestReport() {
       
       console.log('Fetching performance report for ID:', performanceId);
       
-      const response = await axios.get(`/api/tests/performance/${performanceId}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tests/performance/${performanceId}`);
       setReport(response.data.data);
     } catch (error) {
       console.error('Error fetching performance report:', error);

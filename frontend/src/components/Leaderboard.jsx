@@ -15,19 +15,19 @@ function Leaderboard() {
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await axios.get(`/api/users/leaderboard?testId=${testId}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/leaderboard?testId=${testId}`);
       setLeaderboard(response.data.data);
       console.log(response.data.data)
       
       // Find current user's rank
-      const userResponse = await axios.get('/api/users/performance');
+      const userResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/performance`);
       const userPerformance = userResponse.data.data.find(p => p.test?._id === testId);
       
       if (userPerformance) {
         const rank = response.data.data.findIndex(entry => 
           entry.user === userResponse.data?.user?.name
         );
-        setUserRank(rank + 1);
+        setUserRank(rank +1);
       }
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
@@ -37,7 +37,7 @@ function Leaderboard() {
 
   const fetchTestDetails = async () => {
     try {
-      const response = await axios.get(`/api/tests/${testId}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tests/${testId}`);
       setTest(response.data.data);
     } catch (error) {
       console.error('Error fetching test details:', error);

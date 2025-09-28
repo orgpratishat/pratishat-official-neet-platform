@@ -46,7 +46,7 @@ function TestInterface() {
 
   const fetchTest = async () => {
     try {
-      const response = await axios.get(`/api/tests/${id}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tests/${id}`);
       setTest(response.data.data);
       setTimer(response.data.data.duration * 60); // Convert to seconds
     } catch (error) {
@@ -96,7 +96,7 @@ function TestInterface() {
         timeTaken: test.duration * 60 - timer
       };
 
-      await axios.post(`/api/tests/${id}/submit`, submission);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/tests/${id}/submit`, submission);
       navigate(`/report/${id}`);
     } catch (error) {
       console.error('Error submitting test:', error);

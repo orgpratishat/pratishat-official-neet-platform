@@ -15,7 +15,7 @@ function CalendarView() {
 
   const fetchTests = async () => {
     try {
-      const response = await axios.get('/api/tests');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tests`);
       setTests(response.data.data);
     } catch (error) {
       console.error('Error fetching tests:', error);
