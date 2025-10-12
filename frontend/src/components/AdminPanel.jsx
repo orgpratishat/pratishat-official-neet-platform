@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -87,6 +85,113 @@ function AdminPanel() {
     }
   };
 
+  // Validate form before submission
+  const validateForm = () => {
+    // Check if basic test info is filled
+    if (!formData.title.trim()) {
+      alert('Please enter a test title');
+      return false;
+    }
+
+    if (formData.subjects.length === 0) {
+      alert('Please select at least one subject');
+      return false;
+    }
+
+    if (!formData.scheduleDate) {
+      alert('Please select a schedule date and time');
+      return false;
+    }
+
+    // Check if duration is valid
+    if (formData.duration < 1) {
+      alert('Please enter a valid duration');
+      return false;
+    }
+
+    // Check each question and its options
+    for (let i = 0; i < formData.questions.length; i++) {
+      const question = formData.questions[i];
+      
+      // Check if question text is filled
+      if (!question.text.trim()) {
+        alert(`Please enter text for Question ${i + 1}`);
+        return false;
+      }
+
+       if (!question.chapter.trim()) {
+    alert(`Please enter chapter for Question ${i + 1}`);
+    return false;
+  }
+  
+  if (!question.subTopic.trim()) {
+    alert(`Please enter sub-topic for Question ${i + 1}`);
+    return false;
+  }
+
+      // Check if at least one option is marked as correct
+      const hasCorrectOption = question.options.some(option => option.isCorrect);
+      if (!hasCorrectOption) {
+        alert(`Please mark the correct option for Question ${i + 1}`);
+        return false;
+      }
+
+      // Check if all options have text
+      for (let j = 0; j < question.options.length; j++) {
+        const option = question.options[j];
+        if (!option.text.trim()) {
+          alert(`Please enter text for Option ${j + 1} in Question ${i + 1}`);
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/tests`, formData);
+      setShowForm(false);
+      setFormData({
+        title: '',
+        type: 'daily',
+        subjects: [],
+        duration: 60,
+        scheduleDate: '',
+        questions: [{
+          text: '',
+          image: '',
+          options: [
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false }
+          ],
+          subject: 'Physics',
+          difficulty: 'medium',
+          chapter: '',
+          subTopic: '',
+          hint: '',
+          approach: '',
+          steps: ['']
+        }]
+      });
+      fetchTests();
+      alert('Test created successfully!');
+    } catch (error) {
+      console.error('Error creating test:', error);
+      alert('Error creating test. Please try again.');
+    }
+  };
+
   // Handle file input change with WebP validation
   const handleImageUpload = async (event, qIndex, field, oIndex = null) => {
     const file = event.target.files[0];
@@ -128,43 +233,6 @@ function AdminPanel() {
     
     // Clear the input
     event.target.value = '';
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/tests`, formData);
-      setShowForm(false);
-      setFormData({
-        title: '',
-        type: 'daily',
-        subjects: [],
-        duration: 60,
-        scheduleDate: '',
-        questions: [{
-          text: '',
-          image: '',
-          options: [
-            { text: '', image: '', isCorrect: false },
-            { text: '', image: '', isCorrect: false },
-            { text: '', image: '', isCorrect: false },
-            { text: '', image: '', isCorrect: false }
-          ],
-          subject: 'Physics',
-          difficulty: 'medium',
-          chapter: '',
-          subTopic: '',
-          hint: '',
-          approach: '',
-          steps: ['']
-        }]
-      });
-      fetchTests();
-      alert('Test created successfully!');
-    } catch (error) {
-      console.error('Error creating test:', error);
-      alert('Error creating test. Please try again.');
-    }
   };
 
   const handleQuestionChange = (index, field, value) => {
@@ -334,7 +402,7 @@ function AdminPanel() {
                   {/* Basic Test Info */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Test Title</label>
+                      <label className="block text-sm font-medium text-gray-700">Test Title *</label>
                       <input
                         type="text"
                         value={formData.title}
@@ -355,7 +423,7 @@ function AdminPanel() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
+                      <label className="block text-sm font-medium text-gray-700">Duration (minutes) *</label>
                       <input
                         type="number"
                         value={formData.duration}
@@ -368,7 +436,7 @@ function AdminPanel() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Schedule Date & Time</label>
+                      <label className="block text-sm font-medium text-gray-700">Schedule Date & Time *</label>
                       <input
                         type="datetime-local"
                         value={formData.scheduleDate}
@@ -380,7 +448,7 @@ function AdminPanel() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Subjects</label>
+                    <label className="block text-sm font-medium text-gray-700">Subjects *</label>
                     <div className="mt-2 space-x-4">
                       {['Physics', 'Chemistry', 'Biology'].map(subject => (
                         <label key={subject} className="inline-flex items-center">
@@ -405,20 +473,14 @@ function AdminPanel() {
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-medium">Questions</h3>
-                      <button
-                        type="button"
-                        onClick={addQuestion}
-                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
-                      >
-                        Add Question
-                      </button>
+                     
                     </div>
 
                     {formData.questions.map((question, qIndex) => (
                       <div key={qIndex} className="border rounded-lg p-4 mb-4 bg-gray-50">
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Question Text</label>
+                            <label className="block text-sm font-medium text-gray-700">Question Text *</label>
                             <textarea
                               value={question.text}
                               onChange={(e) => handleQuestionChange(qIndex, 'text', e.target.value)}
@@ -454,25 +516,25 @@ function AdminPanel() {
 
                             <div className="mt-2 grid grid-cols-2 gap-2">
                               <div>
-                                <label className="block text-sm font-medium text-gray-700">Chapter</label>
+                                <label className="block text-sm font-medium text-gray-700">Chapter *</label>
                                 <input
                                   type="text"
                                   value={question.chapter}
                                   onChange={(e) =>
                                     handleQuestionChange(qIndex, 'chapter', e.target.value)
                                   }
-                                  className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+                                  className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1 text-sm" required
                                 />
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700">Sub-topic</label>
+                                <label className="block text-sm font-medium text-gray-700">Sub-topic *</label>
                                 <input
                                   type="text"
                                   value={question.subTopic}
                                   onChange={(e) =>
                                     handleQuestionChange(qIndex, 'subTopic', e.target.value)
                                   }
-                                  className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+                                  className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1 text-sm" required
                                 />
                               </div>
                             </div>
@@ -482,7 +544,7 @@ function AdminPanel() {
                         {/* Question Image Upload - WebP Only */}
                         <div className="mt-2">
                           <label className="block text-sm font-medium text-gray-700">
-                            Upload Question Image (WebP Only - Max 5MB)
+                            Upload Question Image (WebP Only  - Max 5MB) (Optional)
                           </label>
                           <input
                             type="file"
@@ -520,7 +582,7 @@ function AdminPanel() {
                         {/* Options with Image Upload */}
                         <div className="mb-4 mt-4">
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Options (Select the correct one)
+                            Options * (Select the correct one)
                           </label>
                           {question.options.map((option, oIndex) => (
                             <div key={oIndex} className="border rounded-lg p-3 mb-3 bg-white">
@@ -546,7 +608,7 @@ function AdminPanel() {
                                       handleOptionChange(qIndex, oIndex, 'text', e.target.value)
                                     }
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2"
-                                    placeholder={`Option ${oIndex + 1} text`}
+                                    placeholder={`Option ${oIndex + 1} text *`}
                                     required
                                   />
                                   
@@ -590,30 +652,30 @@ function AdminPanel() {
                           ))}
                         </div>
 
-                        {/* Hint, Approach and Steps */}
+                        {/* Hint, Approach and Steps - Optional */}
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Hint</label>
+                            <label className="block text-sm font-medium text-gray-700">Hint (Optional)</label>
                             <input
                               type="text"
                               value={question.hint}
                               onChange={(e) => handleQuestionChange(qIndex, 'hint', e.target.value)}
                               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                              placeholder="Provide a hint for the question"
+                              placeholder="Provide a hint for the question (optional)"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Approach</label>
+                            <label className="block text-sm font-medium text-gray-700">Approach (Optional)</label>
                             <textarea
                               value={question.approach}
                               onChange={(e) => handleQuestionChange(qIndex, 'approach', e.target.value)}
                               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                               rows="2"
-                              placeholder="Describe the approach to solve this question"
+                              placeholder="Describe the approach to solve this question (optional)"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Solution Steps</label>
+                            <label className="block text-sm font-medium text-gray-700">Solution Steps (Optional)</label>
                             {question.steps.map((step, sIndex) => (
                               <div key={sIndex} className="flex space-x-2 mb-2">
                                 <span className="w-6 h-6 bg-gray-200 rounded-full text-center text-sm leading-6 flex-shrink-0">
@@ -628,7 +690,7 @@ function AdminPanel() {
                                     handleQuestionChange(qIndex, 'steps', updatedSteps);
                                   }}
                                   className="flex-1 border border-gray-300 rounded-md px-3 py-2"
-                                  placeholder={`Step ${sIndex + 1}`}
+                                  placeholder={`Step ${sIndex + 1} (optional)`}
                                 />
                                 {question.steps.length > 1 && (
                                   <button
@@ -697,7 +759,15 @@ function AdminPanel() {
                     </button>
                   </div>
                 </form>
+                 <button
+                        type="button"
+                        onClick={addQuestion}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+                      >
+                        Add Question
+                      </button>
               </div>
+              
             </div>
           </div>
         )}
