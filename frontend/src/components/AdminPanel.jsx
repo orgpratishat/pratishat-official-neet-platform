@@ -399,81 +399,89 @@ function AdminPanel() {
                 <h2 className="text-xl font-bold mb-4">Create New Test</h2>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Basic Test Info */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Test Title *</label>
-                      <input
-                        type="text"
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        required
-                      />
+                  {/* Basic Test Info - Frozen Section */}
+                  <div className="sticky top-0 bg-white z-10 py-4 border-b shadow-sm">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Test Title *</label>
+                        <input
+                          type="text"
+                          value={formData.title}
+                          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Test Type</label>
+                        <select
+                          value={formData.type}
+                          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                        >
+                          <option value="daily">Daily Test</option>
+                          <option value="weekly">Weekly Test</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Duration (minutes) *</label>
+                        <input
+                          type="number"
+                          value={formData.duration}
+                          onChange={(e) =>
+                            setFormData({ ...formData, duration: parseInt(e.target.value) })
+                          }
+                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          required
+                          min="1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Schedule Date & Time *</label>
+                        <input
+                          type="datetime-local"
+                          value={formData.scheduleDate}
+                          onChange={(e) => setFormData({ ...formData, scheduleDate: e.target.value })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          required
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Test Type</label>
-                      <select
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                      >
-                        <option value="daily">Daily Test</option>
-                        <option value="weekly">Weekly Test</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Duration (minutes) *</label>
-                      <input
-                        type="number"
-                        value={formData.duration}
-                        onChange={(e) =>
-                          setFormData({ ...formData, duration: parseInt(e.target.value) })
-                        }
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        required
-                        min="1"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Schedule Date & Time *</label>
-                      <input
-                        type="datetime-local"
-                        value={formData.scheduleDate}
-                        onChange={(e) => setFormData({ ...formData, scheduleDate: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        required
-                      />
-                    </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Subjects *</label>
-                    <div className="mt-2 space-x-4">
-                      {['Physics', 'Chemistry', 'Biology'].map(subject => (
-                        <label key={subject} className="inline-flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.subjects.includes(subject)}
-                            onChange={(e) => {
-                              const subjects = e.target.checked
-                                ? [...formData.subjects, subject]
-                                : formData.subjects.filter(s => s !== subject);
-                              setFormData({ ...formData, subjects });
-                            }}
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <span className="ml-2">{subject}</span>
-                        </label>
-                      ))}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Subjects *</label>
+                      <div className="mt-2 space-x-4">
+                        {['Physics', 'Chemistry', 'Biology'].map(subject => (
+                          <label key={subject} className="inline-flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={formData.subjects.includes(subject)}
+                              onChange={(e) => {
+                                const subjects = e.target.checked
+                                  ? [...formData.subjects, subject]
+                                  : formData.subjects.filter(s => s !== subject);
+                                setFormData({ ...formData, subjects });
+                              }}
+                              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="ml-2">{subject}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
                   {/* Questions */}
                   <div>
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center mb-4 sticky top-20 bg-white z-10 py-4 border-b">
                       <h3 className="text-lg font-medium">Questions</h3>
-                     
+                      <button
+                        type="button"
+                        onClick={addQuestion}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+                      >
+                        Add Question
+                      </button>
                     </div>
 
                     {formData.questions.map((question, qIndex) => (
@@ -739,35 +747,30 @@ function AdminPanel() {
                     ))}
                   </div>
 
-                  <div className="flex justify-end space-x-4 pt-4 border-t">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.confirm('Are you sure? All unsaved changes will be lost.')) {
-                          setShowForm(false);
-                        }
-                      }}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-                    >
-                      Create Test
-                    </button>
+                  {/* Frozen Action Buttons Section */}
+                  <div className="sticky bottom-0 bg-white z-10 py-4 border-t shadow-lg">
+                    <div className="flex justify-end space-x-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('Are you sure? All unsaved changes will be lost.')) {
+                            setShowForm(false);
+                          }
+                        }}
+                        className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                      >
+                        Create Test
+                      </button>
+                    </div>
                   </div>
                 </form>
-                 <button
-                        type="button"
-                        onClick={addQuestion}
-                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
-                      >
-                        Add Question
-                      </button>
               </div>
-              
             </div>
           </div>
         )}
