@@ -400,7 +400,7 @@ function AdminPanel() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Basic Test Info - Frozen Section */}
-                  <div className="sticky top-0 bg-white z-10 py-4 border-b shadow-sm">
+                  <div className=" top-0 bg-white z-10 py-4 border-b shadow-sm">
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Test Title *</label>
@@ -473,15 +473,9 @@ function AdminPanel() {
 
                   {/* Questions */}
                   <div>
-                    <div className="flex justify-between items-center mb-4 sticky top-20 bg-white z-10 py-4 border-b">
+                    <div className="flex justify-between items-center mb-4 top-20 bg-white z-10 py-4 border-b">
                       <h3 className="text-lg font-medium">Questions</h3>
-                      <button
-                        type="button"
-                        onClick={addQuestion}
-                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
-                      >
-                        Add Question
-                      </button>
+                     
                     </div>
 
                     {formData.questions.map((question, qIndex) => (
@@ -749,6 +743,13 @@ function AdminPanel() {
 
                   {/* Frozen Action Buttons Section */}
                   <div className="sticky bottom-0 bg-white z-10 py-4 border-t shadow-lg">
+                     <button
+                        type="button"
+                        onClick={addQuestion}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+                      >
+                        Add Question
+                      </button>
                     <div className="flex justify-end space-x-4">
                       <button
                         type="button"
@@ -769,6 +770,7 @@ function AdminPanel() {
                       </button>
                     </div>
                   </div>
+                  
                 </form>
               </div>
             </div>
