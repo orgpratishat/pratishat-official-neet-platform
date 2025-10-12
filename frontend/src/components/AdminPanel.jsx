@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -7,6 +8,7 @@ function AdminPanel() {
   const [tests, setTests] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [uploadingStates, setUploadingStates] = useState({}); // Track uploading states
+  const [isSubmitting, setIsSubmitting] = useState(false); // Prevent multiple submissions
   const [formData, setFormData] = useState({
     title: '',
     type: 'daily',
@@ -152,8 +154,17 @@ function AdminPanel() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Prevent multiple clicks
+    if (isSubmitting) {
+      return;
+    }
+    
+    // Set submitting state to true
+    setIsSubmitting(true);
+    
     // Validate form before submission
     if (!validateForm()) {
+      setIsSubmitting(false);
       return;
     }
 
@@ -189,6 +200,9 @@ function AdminPanel() {
     } catch (error) {
       console.error('Error creating test:', error);
       alert('Error creating test. Please try again.');
+    } finally {
+      // Reset submitting state regardless of success or failure
+      setIsSubmitting(false);
     }
   };
 
@@ -489,6 +503,7 @@ function AdminPanel() {
                               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                               rows="3"
                               required
+                               
                             />
                           </div>
                           <div>
@@ -759,14 +774,20 @@ function AdminPanel() {
                           }
                         }}
                         className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                        disabled={isSubmitting}
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                        className={`px-4 py-2 rounded ${
+                          isSubmitting 
+                            ? 'bg-indigo-400 cursor-not-allowed' 
+                            : 'bg-indigo-600 hover:bg-indigo-700'
+                        } text-white`}
+                        disabled={isSubmitting}
                       >
-                        Create Test
+                        {isSubmitting ? 'Creating Test...' : 'Create Test'}
                       </button>
                     </div>
                   </div>

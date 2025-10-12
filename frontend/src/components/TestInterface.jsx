@@ -19,13 +19,17 @@ function TestInterface() {
   const [timer, setTimer] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [flaggedQuestions, setFlaggedQuestions] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false); // NEW: Loading state
+  const [isSubmitted, setIsSubmitted] = useState(false); // NEW: Prevent multiple submissions
   const questionTimerRef = useRef(null);
+  const overallTimerRef = useRef(null); // NEW: Fix timer cleanup
 
   useEffect(() => {
     fetchTest();
     startOverallTimer();
     return () => {
       clearInterval(questionTimerRef.current);
+      clearInterval(overallTimerRef.current); // NEW: Cleanup overall timer
     };
   }, []);
 
@@ -60,7 +64,7 @@ function TestInterface() {
   };
 
   const startOverallTimer = () => {
-    setInterval(() => {
+    overallTimerRef.current = setInterval(() => {
       setTimer(prev => {
         if (prev <= 0) {
           handleSubmit();
@@ -91,6 +95,13 @@ function TestInterface() {
   };
 
   const handleSubmit = async () => {
+    // NEW: Prevent multiple submissions
+    if (isSubmitting || isSubmitted) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    
     try {
       const submission = {
         answers: Object.entries(answers).map(([questionIndex, selectedOption]) => ({
@@ -102,9 +113,11 @@ function TestInterface() {
       };
 
       await axios.post(`${import.meta.env.VITE_API_URL}/api/tests/${id}/submit`, submission);
+      setIsSubmitted(true); // NEW: Mark as submitted
       navigate(`/report/${id}`);
     } catch (error) {
       console.error('Error submitting test:', error);
+      setIsSubmitting(false); // NEW: Reset on error
     }
   };
 
@@ -515,12 +528,23 @@ function TestInterface() {
                     ) : (
                       <button
                         onClick={handleSubmit}
-                        className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-200 flex items-center justify-center space-x-2 text-sm sm:text-base"
+                        disabled={isSubmitting || isSubmitted} // NEW: Disable when submitting/submitted
+                        className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-200 flex items-center justify-center space-x-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>Submit Test</span>
+                        {/* NEW: Loader and conditional text */}
+                        {isSubmitting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Submitting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Submit Test</span>
+                          </>
+                        )}
                       </button>
                     )}
                   </div>
@@ -634,9 +658,18 @@ function TestInterface() {
                 {/* Submit Button for Mobile */}
                 <button
                   onClick={handleSubmit}
-                  className="w-full py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-200 text-sm sm:text-base"
+                  disabled={isSubmitting || isSubmitted} // NEW: Disable when submitting/submitted
+                  className="w-full py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-200 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
-                  Submit Test
+                  {/* NEW: Loader and conditional text */}
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <span>Submit Test</span>
+                  )}
                 </button>
               </div>
             </div>
