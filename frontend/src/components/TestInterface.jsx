@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Flag, X, Menu } from "lucide-react";
 import { useParams, useNavigate } from 'react-router-dom';
@@ -296,7 +298,7 @@ function TestInterface() {
                   </div>
                 )}
 
-                {/* Enhanced Options */}
+                {/* Enhanced Options with Text and Images */}
                 <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                   {question.options.map((option, index) => (
                     <div
@@ -308,19 +310,43 @@ function TestInterface() {
                           : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
-                      <div className="flex items-center">
-                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center mr-3 sm:mr-4 transition-all flex-shrink-0 ${
+                      <div className="flex items-start">
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center mr-3 sm:mr-4 transition-all flex-shrink-0 mt-1 ${
                           selectedAnswer === index
                             ? 'bg-blue-500 border-blue-500 text-white'
                             : 'border-slate-300 group-hover:border-slate-400 bg-white'
                         }`}>
                           {String.fromCharCode(65 + index)}
                         </div>
-                        <span className={`text-base sm:text-lg font-medium break-words ${
-                          selectedAnswer === index ? 'text-blue-900' : 'text-slate-800'
-                        }`}>
-                          {option.text}
-                        </span>
+                        
+                        <div className="flex-1 min-w-0">
+                          {/* Option Text */}
+                          {option.text && (
+                            <div className={`text-base sm:text-lg font-medium break-words mb-2 ${
+                              selectedAnswer === index ? 'text-blue-900' : 'text-slate-800'
+                            }`}>
+                              {option.text}
+                            </div>
+                          )}
+                          
+                          {/* Option Image */}
+                          {option.image && (
+                            <div className="mt-2">
+                              <img 
+                                src={option.image} 
+                                alt={`Option ${String.fromCharCode(65 + index)} diagram`}
+                                className="max-w-full sm:max-w-xs h-auto rounded-lg border border-slate-200 shadow-sm"
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Show when both text and image are missing */}
+                          {!option.text && !option.image && (
+                            <div className="text-slate-500 italic text-sm">
+                              Option {String.fromCharCode(65 + index)} (No content)
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

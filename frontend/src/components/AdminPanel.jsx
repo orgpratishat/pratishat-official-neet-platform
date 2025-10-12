@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 function AdminPanel() {
   const [tests, setTests] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [uploadingStates, setUploadingStates] = useState({}); // Track uploading states
   const [formData, setFormData] = useState({
     title: '',
     type: 'daily',
@@ -18,10 +19,10 @@ function AdminPanel() {
       text: '',
       image: '',
       options: [
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false }
+        { text: '', image: '', isCorrect: false },
+        { text: '', image: '', isCorrect: false },
+        { text: '', image: '', isCorrect: false },
+        { text: '', image: '', isCorrect: false }
       ],
       subject: 'Physics',
       difficulty: 'medium',
@@ -46,12 +47,24 @@ function AdminPanel() {
     }
   };
 
-  // Cloudinary Upload Function
+  // Cloudinary Upload Function for WebP only
   const uploadImageToCloudinary = async (file) => {
+    // Check if file is WebP
+    if (file.type !== 'image/webp') {
+      alert('Please upload only WebP images. Other formats are not allowed.');
+      return '';
+    }
+
+    // Check file size (optional: limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return '';
+    }
+
     const data = new FormData();
     data.append('file', file);
-    data.append('upload_preset', 'test_preset'); // apna unsigned preset daalna
-    data.append('cloud_name', 'djwkt80ss'); // apna cloud name
+    data.append('upload_preset', 'test_preset');
+    data.append('cloud_name', 'djwkt80ss');
 
     try {
       const res = await fetch(`https://api.cloudinary.com/v1_1/djwkt80ss/image/upload`, {
@@ -59,11 +72,62 @@ function AdminPanel() {
         body: data,
       });
       const json = await res.json();
-      return json.secure_url; // Uploaded image URL
+      
+      if (res.ok) {
+        return json.secure_url;
+      } else {
+        console.error('Upload failed:', json);
+        alert('Image upload failed. Please try again.');
+        return '';
+      }
     } catch (err) {
       console.error('Image upload failed:', err);
+      alert('Image upload failed. Please check your connection and try again.');
       return '';
     }
+  };
+
+  // Handle file input change with WebP validation
+  const handleImageUpload = async (event, qIndex, field, oIndex = null) => {
+    const file = event.target.files[0];
+    
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'image/webp') {
+      alert('Only WebP images are allowed. Please convert your image to WebP format.');
+      event.target.value = '';
+      return;
+    }
+
+    // Validate file size
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
+      event.target.value = '';
+      return;
+    }
+
+    // Set uploading state
+    const uploadKey = oIndex !== null ? `q${qIndex}_o${oIndex}` : `q${qIndex}_${field}`;
+    setUploadingStates(prev => ({ ...prev, [uploadKey]: true }));
+
+    const imageUrl = await uploadImageToCloudinary(file);
+    
+    if (imageUrl) {
+      if (oIndex !== null) {
+        // Update option image
+        handleOptionImageChange(qIndex, oIndex, imageUrl);
+      } else {
+        // Update question image
+        handleQuestionChange(qIndex, field, imageUrl);
+      }
+    }
+
+    // Clear uploading state
+    setUploadingStates(prev => ({ ...prev, [uploadKey]: false }));
+    
+    // Clear the input
+    event.target.value = '';
   };
 
   const handleSubmit = async (e) => {
@@ -81,10 +145,10 @@ function AdminPanel() {
           text: '',
           image: '',
           options: [
-            { text: '', isCorrect: false },
-            { text: '', isCorrect: false },
-            { text: '', isCorrect: false },
-            { text: '', isCorrect: false }
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false }
           ],
           subject: 'Physics',
           difficulty: 'medium',
@@ -96,8 +160,10 @@ function AdminPanel() {
         }]
       });
       fetchTests();
+      alert('Test created successfully!');
     } catch (error) {
       console.error('Error creating test:', error);
+      alert('Error creating test. Please try again.');
     }
   };
 
@@ -113,6 +179,20 @@ function AdminPanel() {
     setFormData({ ...formData, questions: updatedQuestions });
   };
 
+  const handleOptionImageChange = (qIndex, oIndex, imageUrl) => {
+    const updatedQuestions = [...formData.questions];
+    updatedQuestions[qIndex].options[oIndex].image = imageUrl;
+    setFormData({ ...formData, questions: updatedQuestions });
+  };
+
+  const removeQuestionImage = (qIndex) => {
+    handleQuestionChange(qIndex, 'image', '');
+  };
+
+  const removeOptionImage = (qIndex, oIndex) => {
+    handleOptionImageChange(qIndex, oIndex, '');
+  };
+
   const addQuestion = () => {
     setFormData({
       ...formData,
@@ -122,10 +202,10 @@ function AdminPanel() {
           text: '',
           image: '',
           options: [
-            { text: '', isCorrect: false },
-            { text: '', isCorrect: false },
-            { text: '', isCorrect: false },
-            { text: '', isCorrect: false }
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false },
+            { text: '', image: '', isCorrect: false }
           ],
           subject: 'Physics',
           difficulty: 'medium',
@@ -144,10 +224,17 @@ function AdminPanel() {
       try {
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/tests/${testId}`);
         fetchTests();
+        alert('Test deleted successfully!');
       } catch (error) {
         console.error('Error deleting test:', error);
+        alert('Error deleting test. Please try again.');
       }
     }
+  };
+
+  const isUploading = (qIndex, field, oIndex = null) => {
+    const key = oIndex !== null ? `q${qIndex}_o${oIndex}` : `q${qIndex}_${field}`;
+    return uploadingStates[key] || false;
   };
 
   return (
@@ -239,7 +326,7 @@ function AdminPanel() {
         {/* Create Test Modal */}
         {showForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-screen overflow-y-auto">
               <div className="p-6">
                 <h2 className="text-xl font-bold mb-4">Create New Test</h2>
 
@@ -277,6 +364,7 @@ function AdminPanel() {
                         }
                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                         required
+                        min="1"
                       />
                     </div>
                     <div>
@@ -317,11 +405,17 @@ function AdminPanel() {
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-medium">Questions</h3>
-                     
+                      <button
+                        type="button"
+                        onClick={addQuestion}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+                      >
+                        Add Question
+                      </button>
                     </div>
 
                     {formData.questions.map((question, qIndex) => (
-                      <div key={qIndex} className="border rounded-lg p-4 mb-4">
+                      <div key={qIndex} className="border rounded-lg p-4 mb-4 bg-gray-50">
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Question Text</label>
@@ -385,61 +479,113 @@ function AdminPanel() {
                           </div>
                         </div>
 
-                        {/* Image Upload */}
+                        {/* Question Image Upload - WebP Only */}
                         <div className="mt-2">
                           <label className="block text-sm font-medium text-gray-700">
-                            Upload Image (Optional)
+                            Upload Question Image (WebP Only - Max 5MB)
                           </label>
                           <input
                             type="file"
-                            accept="image/*"
-                            onChange={async (e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const imageUrl = await uploadImageToCloudinary(file);
-                                handleQuestionChange(qIndex, 'image', imageUrl);
-                              }
-                            }}
+                            accept=".webp,image/webp"
+                            onChange={(e) => handleImageUpload(e, qIndex, 'image')}
                             className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                            disabled={isUploading(qIndex, 'image')}
                           />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Only WebP format is allowed. Convert your images to WebP before uploading.
+                          </p>
 
-                          {question.image && (
-                            <img
-                              src={question.image}
-                              alt="Preview"
-                              className="mt-2 h-32 object-cover rounded"
-                            />
+                          {isUploading(qIndex, 'image') && (
+                            <div className="mt-2 text-blue-600 text-sm">Uploading...</div>
+                          )}
+
+                          {question.image && !isUploading(qIndex, 'image') && (
+                            <div className="mt-2 relative inline-block">
+                              <img
+                                src={question.image}
+                                alt="Question preview"
+                                className="h-32 object-cover rounded border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeQuestionImage(qIndex)}
+                                className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                              >
+                                ×
+                              </button>
+                            </div>
                           )}
                         </div>
 
-                        {/* Options */}
+                        {/* Options with Image Upload */}
                         <div className="mb-4 mt-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Options</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Options (Select the correct one)
+                          </label>
                           {question.options.map((option, oIndex) => (
-                            <div key={oIndex} className="flex items-center space-x-2 mb-2">
-                              <input
-                                type="radio"
-                                name={`correct-${qIndex}`}
-                                checked={option.isCorrect}
-                                onChange={() => {
-                                  const updatedOptions = question.options.map((opt, index) => ({
-                                    ...opt,
-                                    isCorrect: index === oIndex,
-                                  }));
-                                  handleQuestionChange(qIndex, 'options', updatedOptions);
-                                }}
-                                className="text-indigo-600 focus:ring-indigo-500"
-                              />
-                              <input
-                                type="text"
-                                value={option.text}
-                                onChange={(e) =>
-                                  handleOptionChange(qIndex, oIndex, 'text', e.target.value)
-                                }
-                                className="flex-1 border border-gray-300 rounded-md px-3 py-2"
-                                placeholder={`Option ${oIndex + 1}`}
-                                required
-                              />
+                            <div key={oIndex} className="border rounded-lg p-3 mb-3 bg-white">
+                              <div className="flex items-start space-x-2 mb-2">
+                                <input
+                                  type="radio"
+                                  name={`correct-${qIndex}`}
+                                  checked={option.isCorrect}
+                                  onChange={() => {
+                                    const updatedOptions = question.options.map((opt, index) => ({
+                                      ...opt,
+                                      isCorrect: index === oIndex,
+                                    }));
+                                    handleQuestionChange(qIndex, 'options', updatedOptions);
+                                  }}
+                                  className="mt-1 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <div className="flex-1">
+                                  <input
+                                    type="text"
+                                    value={option.text}
+                                    onChange={(e) =>
+                                      handleOptionChange(qIndex, oIndex, 'text', e.target.value)
+                                    }
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2"
+                                    placeholder={`Option ${oIndex + 1} text`}
+                                    required
+                                  />
+                                  
+                                  {/* Option Image Upload */}
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Option Image (Optional - WebP Only)
+                                    </label>
+                                    <input
+                                      type="file"
+                                      accept=".webp,image/webp"
+                                      onChange={(e) => handleImageUpload(e, qIndex, 'option', oIndex)}
+                                      className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+                                      disabled={isUploading(qIndex, 'option', oIndex)}
+                                    />
+                                    
+                                    {isUploading(qIndex, 'option', oIndex) && (
+                                      <div className="text-blue-600 text-xs mt-1">Uploading...</div>
+                                    )}
+
+                                    {option.image && !isUploading(qIndex, 'option', oIndex) && (
+                                      <div className="mt-2 relative inline-block">
+                                        <img
+                                          src={option.image}
+                                          alt={`Option ${oIndex + 1} preview`}
+                                          className="h-20 object-cover rounded border"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => removeOptionImage(qIndex, oIndex)}
+                                          className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                        >
+                                          ×
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -470,7 +616,7 @@ function AdminPanel() {
                             <label className="block text-sm font-medium text-gray-700">Solution Steps</label>
                             {question.steps.map((step, sIndex) => (
                               <div key={sIndex} className="flex space-x-2 mb-2">
-                                <span className="w-6 h-6 bg-gray-200 rounded-full text-center text-sm leading-6">
+                                <span className="w-6 h-6 bg-gray-200 rounded-full text-center text-sm leading-6 flex-shrink-0">
                                   {sIndex + 1}
                                 </span>
                                 <input
@@ -484,16 +630,18 @@ function AdminPanel() {
                                   className="flex-1 border border-gray-300 rounded-md px-3 py-2"
                                   placeholder={`Step ${sIndex + 1}`}
                                 />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updatedSteps = question.steps.filter((_, i) => i !== sIndex);
-                                    handleQuestionChange(qIndex, 'steps', updatedSteps);
-                                  }}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  Remove
-                                </button>
+                                {question.steps.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updatedSteps = question.steps.filter((_, i) => i !== sIndex);
+                                      handleQuestionChange(qIndex, 'steps', updatedSteps);
+                                    }}
+                                    className="text-red-600 hover:text-red-800 flex-shrink-0"
+                                  >
+                                    Remove
+                                  </button>
+                                )}
                               </div>
                             ))}
                             <button
@@ -502,45 +650,41 @@ function AdminPanel() {
                                 const updatedSteps = [...question.steps, ''];
                                 handleQuestionChange(qIndex, 'steps', updatedSteps);
                               }}
-                              className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm mt-2"
+                              className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm mt-2 hover:bg-gray-300"
                             >
                               Add Step
                             </button>
                           </div>
                         </div>
 
-                       
-                       
-
-                       <div className='flex justify-between place-items-center'>
-                               <button
-                          type="button"
-                          onClick={() => {
-                            const updatedQuestions = formData.questions.filter((_, i) => i !== qIndex);
-                            setFormData({ ...formData, questions: updatedQuestions });
-                          }}
-                          className="mt-4 text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Remove Question
-                        </button>
-
-                         <button
-                        type="button"
-                        onClick={addQuestion}
-                        className="bg-green-600 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Add Question
-                      </button>
-                       </div>
-
+                        <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updatedQuestions = formData.questions.filter((_, i) => i !== qIndex);
+                              setFormData({ ...formData, questions: updatedQuestions });
+                            }}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            Remove Question
+                          </button>
+                          
+                          <span className="text-sm text-gray-500">
+                            Question {qIndex + 1} of {formData.questions.length}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="flex justify-end space-x-4">
+                  <div className="flex justify-end space-x-4 pt-4 border-t">
                     <button
                       type="button"
-                      onClick={() => setShowForm(false)}
+                      onClick={() => {
+                        if (window.confirm('Are you sure? All unsaved changes will be lost.')) {
+                          setShowForm(false);
+                        }
+                      }}
                       className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
                     >
                       Cancel
