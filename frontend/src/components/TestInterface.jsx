@@ -1,9 +1,9 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Flag, X, Menu } from "lucide-react";
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import FormattedText from './FormattedText';
+import { parseFormattedText, stripFormatting } from '../utils/textFormatter'
 
 function TestInterface() {
   const { id } = useParams();
@@ -19,22 +19,21 @@ function TestInterface() {
   const [timer, setTimer] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [flaggedQuestions, setFlaggedQuestions] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false); // NEW: Loading state
-  const [isSubmitted, setIsSubmitted] = useState(false); // NEW: Prevent multiple submissions
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const questionTimerRef = useRef(null);
-  const overallTimerRef = useRef(null); // NEW: Fix timer cleanup
+  const overallTimerRef = useRef(null);
 
   useEffect(() => {
     fetchTest();
     startOverallTimer();
     return () => {
       clearInterval(questionTimerRef.current);
-      clearInterval(overallTimerRef.current); // NEW: Cleanup overall timer
+      clearInterval(overallTimerRef.current);
     };
   }, []);
 
   useEffect(() => {
-    // Start timing for current question
     clearInterval(questionTimerRef.current);
     questionTimerRef.current = setInterval(() => {
       setTimeSpent(prev => {
@@ -44,7 +43,6 @@ function TestInterface() {
       });
     }, 1000);
 
-    // Reset solution views when question changes
     setShowSolution(false);
     setShowHint(false);
     setShowApproach(false);
@@ -57,7 +55,7 @@ function TestInterface() {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tests/${id}`);
       setTest(response.data.data);
-      setTimer(response.data.data.duration * 60); // Convert to seconds
+      setTimer(response.data.data.duration * 60);
     } catch (error) {
       console.error('Error fetching test:', error);
     }
@@ -95,7 +93,6 @@ function TestInterface() {
   };
 
   const handleSubmit = async () => {
-    // NEW: Prevent multiple submissions
     if (isSubmitting || isSubmitted) {
       return;
     }
@@ -113,15 +110,14 @@ function TestInterface() {
       };
 
       await axios.post(`${import.meta.env.VITE_API_URL}/api/tests/${id}/submit`, submission);
-      setIsSubmitted(true); // NEW: Mark as submitted
+      setIsSubmitted(true);
       navigate(`/report/${id}`);
     } catch (error) {
       console.error('Error submitting test:', error);
-      setIsSubmitting(false); // NEW: Reset on error
+      setIsSubmitting(false);
     }
   };
 
-  // Toggle flag for current question
   const toggleFlag = () => {
     setFlaggedQuestions(prev => ({
       ...prev,
@@ -129,7 +125,6 @@ function TestInterface() {
     }));
   };
 
-  // Group questions by subject
   const groupQuestionsBySubject = () => {
     if (!test) return {};
     
@@ -175,7 +170,6 @@ function TestInterface() {
   const answeredQuestionsCount = Object.keys(answers).length;
   const flaggedQuestionsCount = Object.values(flaggedQuestions).filter(Boolean).length;
 
-  // Subject color mapping
   const subjectColors = {
     'Physics': 'from-blue-500 to-cyan-500',
     'Chemistry': 'from-purple-500 to-pink-500',
@@ -213,7 +207,6 @@ function TestInterface() {
             </div>
             
             <div className="flex items-center space-x-4 sm:space-x-6">
-              {/* Progress Stats - Hidden on small mobile */}
               <div className="hidden sm:flex items-center space-x-4">
                 <div className="text-center">
                   <div className="text-xs font-semibold text-slate-600">Answered</div>
@@ -229,7 +222,6 @@ function TestInterface() {
                 </div>
               </div>
 
-              {/* Timer */}
               <div className="text-center">
                 <div className={`text-sm sm:text-md font-bold font-mono gap-1 sm:gap-2 flex items-center ${
                   timer < 300 ? 'text-red-500 animate-pulse' : 'text-slate-800'
@@ -278,10 +270,10 @@ function TestInterface() {
                         Question {currentQuestion + 1}
                       </span>
                       <div className="flex items-center justify-between w-full sm:w-auto">
-                        <h2 className="text-lg sm:text-xl font-semibold text-white leading-relaxed break-words flex-1">
-                          {question.text}
-                        </h2>
-                        {/* Flag Button */}
+                        {/* Updated: Use FormattedText for question text */}
+                        <div className="text-lg sm:text-xl font-semibold text-white leading-relaxed break-words flex-1 formatted-question">
+                          <FormattedText text={question.text} />
+                        </div>
                         <button
                           onClick={toggleFlag}
                           className={`ml-2 sm:ml-4 p-2 rounded-lg transition-all duration-200 flex-shrink-0 ${
@@ -311,7 +303,7 @@ function TestInterface() {
                   </div>
                 )}
 
-                {/* Enhanced Options with Text and Images */}
+                {/* Enhanced Options with Formatted Text */}
                 <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                   {question.options.map((option, index) => (
                     <div
@@ -333,12 +325,12 @@ function TestInterface() {
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          {/* Option Text */}
+                          {/* Option Text with Formatting */}
                           {option.text && (
-                            <div className={`text-base sm:text-lg font-medium break-words mb-2 ${
+                            <div className={`text-base sm:text-lg font-medium break-words mb-2 formatted-option ${
                               selectedAnswer === index ? 'text-blue-900' : 'text-slate-800'
                             }`}>
-                              {option.text}
+                              <FormattedText text={option.text} />
                             </div>
                           )}
                           
@@ -420,7 +412,10 @@ function TestInterface() {
                           </div>
                           <h3 className="font-bold text-amber-900 text-base sm:text-lg">Hint</h3>
                         </div>
-                        <p className="text-amber-800 ml-8 sm:ml-11 leading-relaxed text-sm sm:text-base">{question.hint}</p>
+                        {/* Updated: Use FormattedText for hint */}
+                        <div className="text-amber-800 ml-8 sm:ml-11 leading-relaxed text-sm sm:text-base formatted-hint">
+                          <FormattedText text={question.hint} />
+                        </div>
                       </div>
                     )}
 
@@ -434,7 +429,10 @@ function TestInterface() {
                           </div>
                           <h3 className="font-bold text-emerald-900 text-base sm:text-lg">Approach</h3>
                         </div>
-                        <p className="text-emerald-800 ml-8 sm:ml-11 leading-relaxed text-sm sm:text-base">{question.approach}</p>
+                        {/* Updated: Use FormattedText for approach */}
+                        <div className="text-emerald-800 ml-8 sm:ml-11 leading-relaxed text-sm sm:text-base formatted-approach">
+                          <FormattedText text={question.approach} />
+                        </div>
                       </div>
                     )}
 
@@ -468,7 +466,10 @@ function TestInterface() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="font-medium text-slate-700 mb-1 text-sm sm:text-base">Step {index + 1}</div>
-                                  <p className="text-slate-600 leading-relaxed text-sm sm:text-base break-words">{step}</p>
+                                  {/* Updated: Use FormattedText for steps */}
+                                  <div className="text-slate-600 leading-relaxed text-sm sm:text-base break-words formatted-step">
+                                    <FormattedText text={step} />
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -528,10 +529,9 @@ function TestInterface() {
                     ) : (
                       <button
                         onClick={handleSubmit}
-                        disabled={isSubmitting || isSubmitted} // NEW: Disable when submitting/submitted
+                        disabled={isSubmitting || isSubmitted}
                         className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-200 flex items-center justify-center space-x-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {/* NEW: Loader and conditional text */}
                         {isSubmitting ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -592,7 +592,6 @@ function TestInterface() {
                 <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
                   {Object.entries(subjectGroups).map(([subject, questions]) => (
                     <div key={subject} className="space-y-2 sm:space-y-3">
-                      {/* Subject Header */}
                       <div className={`bg-gradient-to-r ${getSubjectColor(subject)} text-white px-3 sm:px-4 py-2 rounded-lg`}>
                         <div className="flex justify-between items-center">
                           <h4 className="font-semibold text-xs sm:text-sm">{subject}</h4>
@@ -602,7 +601,6 @@ function TestInterface() {
                         </div>
                       </div>
                       
-                      {/* Questions Grid for this Subject */}
                       <div className="grid grid-cols-4 sm:grid-cols-5 gap-1 sm:gap-2">
                         {questions.map(({ index, answered, current, flagged }) => (
                           <button
@@ -624,7 +622,6 @@ function TestInterface() {
                             }`}
                           >
                             {index + 1}
-                            {/* Small flag indicator for flagged questions */}
                             {flagged && (
                               <div className="absolute -top-1 -right-1">
                                 <Flag className="w-2 h-2 sm:w-3 sm:h-3 fill-white text-white" />
@@ -655,13 +652,11 @@ function TestInterface() {
                   </div>
                 </div>
 
-                {/* Submit Button for Mobile */}
                 <button
                   onClick={handleSubmit}
-                  disabled={isSubmitting || isSubmitted} // NEW: Disable when submitting/submitted
+                  disabled={isSubmitting || isSubmitted}
                   className="w-full py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg sm:rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-200 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
-                  {/* NEW: Loader and conditional text */}
                   {isSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -684,6 +679,97 @@ function TestInterface() {
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
+
+      {/* Add CSS for formatted text */}
+      <style jsx>{`
+        /* Base formatted text styles */
+        .formatted-text {
+          line-height: 1.6;
+        }
+        
+        .formatted-text :global(strong) {
+          font-weight: bold;
+          color: inherit;
+        }
+
+        .formatted-text :global(em) {
+          font-style: italic;
+          color: inherit;
+        }
+
+        .formatted-text :global(u) {
+          text-decoration: underline;
+          color: inherit;
+        }
+
+        .formatted-text :global(sub) {
+          vertical-align: sub;
+          font-size: 0.75em;
+          line-height: 0;
+          position: relative;
+          bottom: -0.25em;
+        }
+
+        .formatted-text :global(sup) {
+          vertical-align: super;
+          font-size: 0.75em;
+          line-height: 0;
+          position: relative;
+          top: -0.5em;
+        }
+
+        .formatted-text :global(br) {
+          content: '';
+          display: block;
+          margin-bottom: 0.5em;
+        }
+
+        /* Specific styles for different contexts */
+        .formatted-question :global(.formatted-text) {
+          font-size: inherit;
+          line-height: 1.5;
+        }
+
+        .formatted-option :global(.formatted-text) {
+          font-size: inherit;
+        }
+
+        .formatted-hint :global(.formatted-text),
+        .formatted-approach :global(.formatted-text),
+        .formatted-step :global(.formatted-text) {
+          font-size: inherit;
+          line-height: 1.6;
+        }
+
+        /* Ensure proper spacing for formatted elements */
+        .formatted-text :global(strong),
+        .formatted-text :global(em),
+        .formatted-text :global(u),
+        .formatted-text :global(sub),
+        .formatted-text :global(sup) {
+          display: inline;
+        }
+
+        /* Math and symbol support */
+        .formatted-text {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                      'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 
+                      'Segoe UI Emoji', 'Segoe UI Symbol';
+        }
+
+        /* Dark mode support for question header */
+        .formatted-question :global(.formatted-text) {
+          color: inherit;
+        }
+
+        .formatted-question :global(.formatted-text strong),
+        .formatted-question :global(.formatted-text em),
+        .formatted-question :global(.formatted-text u),
+        .formatted-question :global(.formatted-text sub),
+        .formatted-question :global(.formatted-text sup) {
+          color: inherit;
+        }
+      `}</style>
     </div>
   );
 }
