@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -22,6 +24,7 @@ function AdminPanel() {
         { text: '', isCorrect: false }
       ],
       subject: 'Physics',
+      difficulty: 'medium',
       chapter: '',
       subTopic: '',
       hint: '',
@@ -84,6 +87,7 @@ function AdminPanel() {
             { text: '', isCorrect: false }
           ],
           subject: 'Physics',
+          difficulty: 'medium',
           chapter: '',
           subTopic: '',
           hint: '',
@@ -124,6 +128,7 @@ function AdminPanel() {
             { text: '', isCorrect: false }
           ],
           subject: 'Physics',
+          difficulty: 'medium',
           chapter: '',
           subTopic: '',
           hint: '',
@@ -161,17 +166,14 @@ function AdminPanel() {
           </button>
         </div>
 
-
-     
-<div className="flex space-x-4 mb-6">
-  
-  <Link
-    to="/admin/students"
-    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-  >
-    Student Management
-  </Link>
-</div>
+        <div className="flex space-x-4 mb-6">
+          <Link
+            to="/admin/students"
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Student Management
+          </Link>
+        </div>
 
         {/* Test List */}
         <div className="bg-white rounded-lg shadow">
@@ -199,6 +201,25 @@ function AdminPanel() {
                     </div>
                     <div className="text-sm text-gray-600">
                       Questions: {test.questions.length}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Difficulty: 
+                      {(() => {
+                        const difficulties = test.questions.reduce((acc, q) => {
+                          acc[q.difficulty] = (acc[q.difficulty] || 0) + 1;
+                          return acc;
+                        }, {});
+                        
+                        return Object.entries(difficulties).map(([diff, count]) => (
+                          <span key={diff} className={`ml-2 px-2 py-1 rounded text-xs ${
+                            diff === 'easy' ? 'bg-green-100 text-green-800' :
+                            diff === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {diff}: {count}
+                          </span>
+                        ));
+                      })()}
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -296,7 +317,7 @@ function AdminPanel() {
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-medium">Questions</h3>
-                      
+                     
                     </div>
 
                     {formData.questions.map((question, qIndex) => (
@@ -323,6 +344,19 @@ function AdminPanel() {
                               <option value="Chemistry">Chemistry</option>
                               <option value="Biology">Biology</option>
                             </select>
+
+                            <div className="mt-2">
+                              <label className="block text-sm font-medium text-gray-700">Difficulty</label>
+                              <select
+                                value={question.difficulty}
+                                onChange={(e) => handleQuestionChange(qIndex, 'difficulty', e.target.value)}
+                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                              >
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                              </select>
+                            </div>
 
                             <div className="mt-2 grid grid-cols-2 gap-2">
                               <div>
@@ -410,91 +444,97 @@ function AdminPanel() {
                           ))}
                         </div>
 
-                        {/* Daily Test Features */}
-                        {formData.type === 'daily' && (
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">Hint</label>
-                              <input
-                                type="text"
-                                value={question.hint}
-                                onChange={(e) => handleQuestionChange(qIndex, 'hint', e.target.value)}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">Approach</label>
-                              <textarea
-                                value={question.approach}
-                                onChange={(e) => handleQuestionChange(qIndex, 'approach', e.target.value)}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                rows="2"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">Solution Steps</label>
-                              {question.steps.map((step, sIndex) => (
-                                <div key={sIndex} className="flex space-x-2 mb-2">
-                                  <span className="w-6 h-6 bg-gray-200 rounded-full text-center text-sm leading-6">
-                                    {sIndex + 1}
-                                  </span>
-                                  <input
-                                    type="text"
-                                    value={step}
-                                    onChange={(e) => {
-                                      const updatedSteps = [...question.steps];
-                                      updatedSteps[sIndex] = e.target.value;
-                                      handleQuestionChange(qIndex, 'steps', updatedSteps);
-                                    }}
-                                    className="flex-1 border border-gray-300 rounded-md px-3 py-2"
-                                    placeholder={`Step ${sIndex + 1}`}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const updatedSteps = question.steps.filter((_, i) => i !== sIndex);
-                                      handleQuestionChange(qIndex, 'steps', updatedSteps);
-                                    }}
-                                    className="text-red-600 hover:text-red-800"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              ))}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updatedSteps = [...question.steps, ''];
-                                  handleQuestionChange(qIndex, 'steps', updatedSteps);
-                                }}
-                                className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm mt-2"
-                              >
-                                Add Step
-                              </button>
-                            </div>
+                        {/* Hint, Approach and Steps */}
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Hint</label>
+                            <input
+                              type="text"
+                              value={question.hint}
+                              onChange={(e) => handleQuestionChange(qIndex, 'hint', e.target.value)}
+                              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                              placeholder="Provide a hint for the question"
+                            />
                           </div>
-                        )}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Approach</label>
+                            <textarea
+                              value={question.approach}
+                              onChange={(e) => handleQuestionChange(qIndex, 'approach', e.target.value)}
+                              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                              rows="2"
+                              placeholder="Describe the approach to solve this question"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Solution Steps</label>
+                            {question.steps.map((step, sIndex) => (
+                              <div key={sIndex} className="flex space-x-2 mb-2">
+                                <span className="w-6 h-6 bg-gray-200 rounded-full text-center text-sm leading-6">
+                                  {sIndex + 1}
+                                </span>
+                                <input
+                                  type="text"
+                                  value={step}
+                                  onChange={(e) => {
+                                    const updatedSteps = [...question.steps];
+                                    updatedSteps[sIndex] = e.target.value;
+                                    handleQuestionChange(qIndex, 'steps', updatedSteps);
+                                  }}
+                                  className="flex-1 border border-gray-300 rounded-md px-3 py-2"
+                                  placeholder={`Step ${sIndex + 1}`}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updatedSteps = question.steps.filter((_, i) => i !== sIndex);
+                                    handleQuestionChange(qIndex, 'steps', updatedSteps);
+                                  }}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedSteps = [...question.steps, ''];
+                                handleQuestionChange(qIndex, 'steps', updatedSteps);
+                              }}
+                              className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm mt-2"
+                            >
+                              Add Step
+                            </button>
+                          </div>
+                        </div>
 
-                        <button
+                       
+                       
+
+                       <div className='flex justify-between place-items-center'>
+                               <button
                           type="button"
                           onClick={() => {
                             const updatedQuestions = formData.questions.filter((_, i) => i !== qIndex);
                             setFormData({ ...formData, questions: updatedQuestions });
                           }}
-                          className="mt-2 text-red-600 hover:text-red-800 text-sm"
+                          className="mt-4 text-red-600 hover:text-red-800 text-sm"
                         >
                           Remove Question
                         </button>
-                      </div>
-                    ))}
 
-                      <button
+                         <button
                         type="button"
                         onClick={addQuestion}
                         className="bg-green-600 text-white px-3 py-1 rounded text-sm"
                       >
                         Add Question
                       </button>
+                       </div>
+
+                      </div>
+                    ))}
                   </div>
 
                   <div className="flex justify-end space-x-4">

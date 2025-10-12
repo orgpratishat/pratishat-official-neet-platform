@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+
 const questionSchema = new mongoose.Schema({
   text: {
     type: String,
@@ -14,6 +15,11 @@ const questionSchema = new mongoose.Schema({
     type: String,
     enum: ['Physics', 'Chemistry', 'Biology'],
     required: true
+  },
+  difficulty: {
+    type: String,
+    enum: ['easy', 'medium', 'hard'],
+    default: 'medium'
   },
   chapter: String,
   subTopic: String,
@@ -62,3 +68,12 @@ const testSchema = new mongoose.Schema({
 });
 
 export default mongoose.model('Test', testSchema);
+
+
+
+
+
+
+
+
+

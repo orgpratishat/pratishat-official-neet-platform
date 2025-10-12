@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, isSameDay as dateFnsIsSameDay, getHours, getMinutes } from 'date-fns';
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  isSameMonth, 
+  isSameDay, 
+  startOfWeek, 
+  endOfWeek, 
+  isSameDay as dateFnsIsSameDay, 
+  getHours, 
+  getMinutes,
+  addDays
+} from 'date-fns';
 import axios from 'axios';
 
 function CalendarView() {
@@ -50,6 +63,19 @@ function CalendarView() {
     return eachDayOfInterval({ start, end });
   };
 
+  // Get calendar days for month view - correctly aligned with weekdays
+  const getMonthDays = () => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    
+    // Start from the first day of the week that contains the month start
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    // End with the last day of the week that contains the month end
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+    
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  };
+
   // Get all unique hours that have tests in the current week
   const getHoursWithTests = () => {
     const weekDays = getWeekDays();
@@ -73,6 +99,11 @@ function CalendarView() {
 
     // Convert to array, sort, and ensure unique values
     const hoursArray = Array.from(hoursSet).sort((a, b) => a - b);
+    
+    // Ensure we have at least some hours to display
+    if (hoursArray.length === 0) {
+      return [9, 10, 11, 12, 13, 14, 15, 16]; // Default hours if no tests
+    }
     
     return hoursArray;
   };
@@ -246,7 +277,7 @@ function CalendarView() {
 
         {/* Calendar Grid */}
         {viewMode === 'month' ? (
-          // Month View
+          // Month View - CORRECTED
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-white/20">
             <div className="grid grid-cols-7 bg-gradient-to-r from-slate-100 to-slate-200 rounded-t-2xl">
               {weekdays.map(day => (
@@ -257,10 +288,7 @@ function CalendarView() {
             </div>
 
             <div className="grid grid-cols-7">
-              {eachDayOfInterval({ 
-                start: startOfMonth(currentDate), 
-                end: endOfMonth(currentDate) 
-              }).map(day => {
+              {getMonthDays().map(day => {
                 const dayTests = getTestsForDate(day);
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isToday = isSameDay(day, new Date());
@@ -269,7 +297,7 @@ function CalendarView() {
                   <div
                     key={day.toISOString()}
                     className={`min-h-[140px] p-4 border-r border-b border-slate-200/50 transition-all duration-200 hover:bg-white/60 cursor-pointer group ${
-                      isCurrentMonth ? 'bg-white/50' : 'bg-slate-100/50'
+                      isCurrentMonth ? 'bg-white/50' : 'bg-slate-100/50 text-slate-400'
                     } ${isToday ? 'bg-blue-50/80 border-blue-200/50 relative' : ''}`}
                     onClick={() => setSelectedDate(day)}
                   >
@@ -483,29 +511,3 @@ function CalendarView() {
 }
 
 export default CalendarView;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
